@@ -1,7 +1,7 @@
 {
-  "name": "Mp3 to Mp4 equalizer",
-  "short_name": "Mp3 to Mp4",
-  "description": "Create MP4 videos with an audio equalizer from MP3 files.",
+  "name": "MP3 to MP4 Equalizer",
+  "short_name": "MP3 to MP4",
+  "description": "Create MP4 videos with a customizable audio equalizer and music visualizer from MP3 files.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

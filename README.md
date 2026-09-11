@@ -2,6 +2,10 @@
 
 Version 2 adds a cleaner studio-style interface and bilingual controls.
 
+## Live demo
+
+Try the live **MP3 to MP4 Equalizer** at [apps.6arshid.com/mp3tomp4/](https://apps.6arshid.com/mp3tomp4/).
+
 ## Features
 
 - English is the default UI language
