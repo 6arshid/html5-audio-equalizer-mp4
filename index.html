@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>FrameBeat Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="studio">
+    <header class="topbar">
+      <div class="wordmark">
+        <span class="mark"></span>
+        <div>
+          <strong>FrameBeat</strong>
+          <small data-i18n="studio">Visualizer Studio</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="langBtn" class="quiet">FA</button>
+        <button id="playBtn" class="quiet" data-i18n="preview">Preview</button>
+        <button id="exportBtn" class="export" data-i18n="export">Export MP4</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar left-panel">
+        <div class="panel-title">
+          <span data-i18n="project">Project</span>
+          <small data-i18n="assets">Assets & content</small>
+        </div>
+
+        <div class="field">
+          <label data-i18n="cover">Cover / Thumbnail</label>
+          <label class="dropzone">
+            <input id="coverInput" type="file" accept="image/*">
+            <span data-i18n="chooseCover">Choose image</span>
+            <small>JPG, PNG, WEBP</small>
+          </label>
+        </div>
+
+        <div class="field">
+          <label data-i18n="audio">Audio file</label>
+          <label class="dropzone">
+            <input id="audioInput" type="file" accept="audio/*,.mp3">
+            <span data-i18n="chooseAudio">Choose MP3</span>
+            <small id="audioName">No file selected</small>
+          </label>
+        </div>
+
+        <div class="field">
+          <label data-i18n="title">Title</label>
+          <input id="titleInput" class="text-input" type="text" maxlength="100" placeholder="Track title">
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label data-i18n="description">Description</label>
+            <span class="optional" data-i18n="optional">Optional</span>
+          </div>
+          <textarea id="descInput" class="text-input" rows="4" placeholder="Short description"></textarea>
+        </div>
+
+        <div class="field">
+          <label data-i18n="descImage">Description image</label>
+          <label class="dropzone compact">
+            <input id="descImageInput" type="file" accept="image/*">
+            <span data-i18n="chooseDescImage">Add image</span>
+            <small data-i18n="imageHint">Shown inside description block</small>
+          </label>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label data-i18n="font">Google Font</label>
+            <span id="fontState" class="optional">Online</span>
+          </div>
+          <input id="fontSearch" class="text-input" list="fontList" placeholder="Inter">
+          <datalist id="fontList"></datalist>
+          <small class="helper" data-i18n="fontHelp">Search or type any Google Font family.</small>
+        </div>
+      </aside>
+
+      <section class="preview-area">
+        <div class="preview-head">
+          <div>
+            <strong data-i18n="canvas">Canvas</strong>
+            <span id="canvasInfo">1920 × 1080</span>
+          </div>
+          <div class="time" id="timeText">00:00 / 00:00</div>
+        </div>
+
+        <div class="canvas-frame">
+          <canvas id="canvas" width="1920" height="1080"></canvas>
+          <div id="dragTip" class="drag-tip" data-i18n="dragTip">Drag the description block directly on the canvas</div>
+        </div>
+
+        <audio id="audio" controls></audio>
+      </section>
+
+      <aside class="sidebar right-panel">
+        <div class="panel-title">
+          <span data-i18n="design">Design</span>
+          <small data-i18n="layoutMotion">Layout & motion</small>
+        </div>
+
+        <div class="split">
+          <div class="field">
+            <label data-i18n="ratio">Aspect ratio</label>
+            <select id="ratioSelect">
+              <option value="16:9" selected>16:9 — YouTube</option>
+              <option value="9:16">9:16 — Reels</option>
+              <option value="1:1">1:1 — Square</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-i18n="quality">Quality</label>
+            <select id="qualitySelect">
+              <option value="720">720p</option>
+              <option value="1080" selected>1080p</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label data-i18n="visualizer">Visualizer</label>
+          <div class="segmented" id="vizSegments">
+            <button data-viz="bars" class="active">Bars</button>
+            <button data-viz="mirror">Mirror</button>
+            <button data-viz="circle">Circle</button>
+            <button data-viz="wave">Wave</button>
+          </div>
+          <select id="vizSelect" hidden>
+            <option value="bars" selected>bars</option>
+            <option value="mirror">mirror</option>
+            <option value="circle">circle</option>
+            <option value="wave">wave</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label data-i18n="accent">Accent</label>
+          <div class="swatches">
+            <button class="swatch active" data-theme="violet" style="--c:#7765ff"></button>
+            <button class="swatch" data-theme="cyan" style="--c:#40c9ff"></button>
+            <button class="swatch" data-theme="amber" style="--c:#f4b860"></button>
+            <button class="swatch" data-theme="rose" style="--c:#ff6f91"></button>
+            <button class="swatch" data-theme="white" style="--c:#f2f2f2"></button>
+          </div>
+          <select id="themeSelect" hidden>
+            <option value="violet" selected>violet</option>
+            <option value="cyan">cyan</option>
+            <option value="amber">amber</option>
+            <option value="rose">rose</option>
+            <option value="white">white</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label data-i18n="descriptionLayout">Description layout</label>
+          <div class="split">
+            <select id="descAlign">
+              <option value="left" data-i18n="alignLeft">Left</option>
+              <option value="center" data-i18n="alignCenter">Center</option>
+              <option value="right" data-i18n="alignRight">Right</option>
+            </select>
+            <select id="descStyle">
+              <option value="plain" data-i18n="plain">Plain</option>
+              <option value="card" selected data-i18n="card">Card</option>
+              <option value="glass" data-i18n="glass">Glass</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field sliders">
+          <label><span data-i18n="visualizerGain">Visualizer gain</span><b id="gainVal">1.35×</b></label>
+          <input id="gainRange" type="range" min=".6" max="2.5" value="1.35" step=".05">
+
+          <label><span data-i18n="backgroundBlur">Background blur</span><b id="blurVal">10</b></label>
+          <input id="blurRange" type="range" min="0" max="28" value="10">
+
+          <label><span data-i18n="backgroundShade">Background shade</span><b id="darkenVal">42%</b></label>
+          <input id="darkenRange" type="range" min="0" max=".85" value=".42" step=".01">
+
+          <label><span data-i18n="descWidth">Description width</span><b id="descWidthVal">42%</b></label>
+          <input id="descWidth" type="range" min="24" max="76" value="42">
+        </div>
+
+        <div class="field">
+          <label data-i18n="position">Description position</label>
+          <div class="position-grid">
+            <label>X <input id="descX" type="number" min="0" max="100" value="50"><span>%</span></label>
+            <label>Y <input id="descY" type="number" min="0" max="100" value="76"><span>%</span></label>
+          </div>
+        </div>
+
+        <div class="status-card">
+          <div>
+            <span data-i18n="status">Status</span>
+            <strong id="statusText">Ready</strong>
+          </div>
+          <div class="progress"><i id="progressBar"></i></div>
+          <small id="hintText" data-i18n="hint">MP4 is rendered locally in your browser.</small>
+          <button id="stopBtn" class="stop" disabled data-i18n="stop">Stop export</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
