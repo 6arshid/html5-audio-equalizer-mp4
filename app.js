@@ -121,6 +121,10 @@ function getCoverLayout(){
   return{x,y,size,cx:x+size/2,cy:y+size/2};
 }
 
+function getVisualizerMode(){
+  return $("[data-viz].active")?.dataset.viz||vizSelect.value;
+}
+
 function drawBackground(){
   const w=canvas.width,h=canvas.height;
   const backdrop=backgroundImg||coverImg;
@@ -139,8 +143,16 @@ function drawBackground(){
 
 function drawCover(){
   if(!coverImg)return;
-  const {x,y,size}=getCoverLayout();
-  ctx.save();ctx.shadowColor="rgba(0,0,0,.48)";ctx.shadowBlur=size*.09;roundRect(ctx,x,y,size,size,size*.035);ctx.clip();imageCover(coverImg,x,y,size,size);ctx.restore();
+  const {x,y,size,cx,cy}=getCoverLayout();
+  ctx.save();ctx.shadowColor="rgba(0,0,0,.48)";ctx.shadowBlur=size*.09;
+  if(getVisualizerMode()==="circle"){
+    const r=size*.74;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.closePath();ctx.clip();
+    imageCover(coverImg,cx-r,cy-r,r*2,r*2);
+  }else{
+    roundRect(ctx,x,y,size,size,size*.035);ctx.clip();imageCover(coverImg,x,y,size,size);
+  }
+  ctx.restore();
 }
 
 function gradient(x1,y1,x2,y2){
@@ -151,7 +163,7 @@ function gradient(x1,y1,x2,y2){
 function drawVisualizer(){
   if(analyser){analyser.getByteFrequencyData(freqData);analyser.getByteTimeDomainData(timeData)}
   else{freqData=freqData||new Uint8Array(1024);timeData=timeData||new Uint8Array(2048).fill(128)}
-  const mode=vizSelect.value;
+  const mode=getVisualizerMode();
   if(mode==="circle")return drawCircle();
   if(mode==="wave")return drawWave();
   drawBars(mode==="mirror");
