@@ -7,7 +7,7 @@ const descImageInput=$("#descImageInput"),fontSearch=$("#fontSearch"),fontList=$
 const ratioSelect=$("#ratioSelect"),qualitySelect=$("#qualitySelect"),vizSelect=$("#vizSelect"),themeSelect=$("#themeSelect");
 const gainRange=$("#gainRange"),blurRange=$("#blurRange"),darkenRange=$("#darkenRange"),descWidth=$("#descWidth");
 const descX=$("#descX"),descY=$("#descY"),descAlign=$("#descAlign"),descStyle=$("#descStyle");
-const playBtn=$("#playBtn"),exportBtn=$("#exportBtn"),stopBtn=$("#stopBtn"),langBtn=$("#langBtn");
+const playBtn=$("#playBtn"),exportBtn=$("#exportBtn"),mobileExportBtn=$("#mobileExportBtn"),downloadBtn=$("#downloadBtn"),stopBtn=$("#stopBtn"),langBtn=$("#langBtn");
 const resetBackgroundBtn=$("#resetBackgroundBtn"),backgroundName=$("#backgroundName");
 const statusText=$("#statusText"),progressBar=$("#progressBar"),hintText=$("#hintText"),canvasInfo=$("#canvasInfo"),timeText=$("#timeText");
 
@@ -34,8 +34,10 @@ const I18N={
   visualizerGain:"Visualizer gain",backgroundBlur:"Background blur",backgroundShade:"Background shade",
   descWidth:"Description width",position:"Description position",status:"Status",hint:"MP4 is rendered locally in your browser.",
   stop:"Stop export",ready:"Ready",audioReady:"Audio ready",rendering:"Rendering video…",converting:"Converting to MP4…",
-  done:"MP4 ready",stopped:"Export stopped",fallback:"MP4 conversion failed; WebM saved",needAudio:"Choose an MP3 file first.",
-  noRecorder:"MediaRecorder is not supported in this browser.",trackTitle:"Track title",noFile:"No file selected"
+  done:"MP4 ready",stopped:"Export stopped",fallback:"MP4 conversion failed; WebM is ready to download",needAudio:"Choose an MP3 file first.",
+  noRecorder:"MediaRecorder is not supported in this browser.",trackTitle:"Track title",noFile:"No file selected",
+  downloadFile:"Download file",shareTitle:"FrameBeat video",saveReady:"Your video is ready. Tap Download file to save it.",
+  starting:"Starting export…",exportFailed:"Export failed",noCanvasCapture:"Video export is not supported by this mobile browser.",unsupportedFormat:"This browser cannot record a supported video format."
  },
  fa:{
   background:"پس‌زمینه",chooseBackground:"انتخاب پس‌زمینه",coverDefault:"به‌صورت پیش‌فرض از کاور استفاده می‌شود",useCover:"استفاده از کاور",
@@ -49,8 +51,10 @@ const I18N={
   visualizerGain:"شدت اکولایزر",backgroundBlur:"محو پس‌زمینه",backgroundShade:"تیرگی پس‌زمینه",
   descWidth:"عرض توضیحات",position:"موقعیت توضیحات",status:"وضعیت",hint:"خروجی MP4 داخل مرورگر ساخته می‌شود.",
   stop:"توقف خروجی",ready:"آماده",audioReady:"فایل صوتی آماده",rendering:"در حال رندر ویدئو…",converting:"در حال تبدیل به MP4…",
-  done:"MP4 آماده شد",stopped:"خروجی متوقف شد",fallback:"تبدیل MP4 ناموفق بود؛ WebM ذخیره شد",needAudio:"ابتدا فایل MP3 را انتخاب کنید.",
-  noRecorder:"این مرورگر MediaRecorder را پشتیبانی نمی‌کند.",trackTitle:"عنوان موسیقی",noFile:"فایلی انتخاب نشده"
+  done:"MP4 آماده شد",stopped:"خروجی متوقف شد",fallback:"تبدیل MP4 ناموفق بود؛ WebM آماده دانلود است",needAudio:"ابتدا فایل MP3 را انتخاب کنید.",
+  noRecorder:"این مرورگر MediaRecorder را پشتیبانی نمی‌کند.",trackTitle:"عنوان موسیقی",noFile:"فایلی انتخاب نشده",
+  downloadFile:"دانلود فایل",shareTitle:"ویدئوی FrameBeat",saveReady:"ویدئو آماده است. برای ذخیره، روی دانلود فایل بزنید.",
+  starting:"در حال شروع خروجی…",exportFailed:"ساخت خروجی ناموفق بود",noCanvasCapture:"این مرورگر موبایل از خروجی ویدئو پشتیبانی نمی‌کند.",unsupportedFormat:"مرورگر امکان ضبط با فرمت ویدئویی مناسب را ندارد."
  }
 };
 
@@ -339,34 +343,65 @@ playBtn.onclick=async()=>{
 async function exportVideo(){
   if(!audio.src){alert(t("needAudio"));return}
   if(typeof MediaRecorder==="undefined"){alert(t("noRecorder"));return}
-  await ensureAudioGraph();if(audioCtx.state==="suspended")await audioCtx.resume();
+  if(typeof canvas.captureStream!=="function"){showExportError(t("noCanvasCapture"));return}
 
-  abortExport=false;exportBtn.disabled=true;stopBtn.disabled=false;chunks=[];
-  const canvasStream=canvas.captureStream(30),dest=audioCtx.createMediaStreamDestination();analyser.connect(dest);
-  const outStream=new MediaStream([...canvasStream.getVideoTracks(),...dest.stream.getAudioTracks()]);
-  let mime="video/webm;codecs=vp9,opus";if(!MediaRecorder.isTypeSupported(mime))mime="video/webm;codecs=vp8,opus";if(!MediaRecorder.isTypeSupported(mime))mime="video/webm";
-  recorder=new MediaRecorder(outStream,{mimeType:mime,videoBitsPerSecond:qualitySelect.value==="1080"?9000000:5000000});
-  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.start(1000);
-  audio.currentTime=0;await audio.play();setStatus("rendering",0);
+  abortExport=false;setExportDisabled(true);downloadBtn.hidden=true;hintText.textContent=t("hint");stopBtn.disabled=false;chunks=[];setStatus("starting",0);
+  let dest,canvasStream,outStream;
+  try{
+    await ensureAudioGraph();if(audioCtx.state==="suspended")await audioCtx.resume();
+    const mime=getRecorderMimeType();
+    if(!mime)throw Error(t("unsupportedFormat"));
+    canvasStream=canvas.captureStream(30);dest=audioCtx.createMediaStreamDestination();analyser.connect(dest);
+    outStream=new MediaStream([...canvasStream.getVideoTracks(),...dest.stream.getAudioTracks()]);
+    recorder=new MediaRecorder(outStream,{mimeType:mime,videoBitsPerSecond:qualitySelect.value==="1080"?7000000:4000000});
+    recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+    const recorderFailure=new Promise((_,reject)=>recorder.addEventListener("error",e=>reject(e.error||Error("MediaRecorder error")),{once:true}));
+    recorder.start(1000);
+    audio.currentTime=0;await audio.play();setStatus("rendering",0);
 
-  await new Promise(resolve=>{
-    const tick=()=>{if(audio.duration)setStatus("rendering",audio.currentTime/audio.duration*88)};
-    const finish=()=>{cleanup();resolve()};
-    const watch=setInterval(()=>{if(abortExport){audio.pause();cleanup();resolve()}},200);
-    const cleanup=()=>{clearInterval(watch);audio.removeEventListener("timeupdate",tick);audio.removeEventListener("ended",finish)};
-    audio.addEventListener("timeupdate",tick);audio.addEventListener("ended",finish);
-  });
+    await Promise.race([waitForRecordingEnd(),recorderFailure]);
+    if(recorder.state!=="inactive")await new Promise((resolve,reject)=>{
+      recorder.addEventListener("stop",resolve,{once:true});
+      recorder.addEventListener("error",e=>reject(e.error||Error("MediaRecorder error")),{once:true});
+      recorder.stop();
+    });
+    if(abortExport){setStatus("stopped",0);return}
+    if(!chunks.length)throw Error("The browser produced an empty recording");
 
-  if(recorder.state!=="inactive")await new Promise(res=>{recorder.onstop=res;recorder.stop()});
-  analyser.disconnect(dest);
-  if(abortExport){setStatus("stopped",0);exportBtn.disabled=false;stopBtn.disabled=true;return}
-
-  const webmBlob=new Blob(chunks,{type:mime});setStatus("converting",90);
-  try{await transcodeToMp4(webmBlob);setStatus("done",100)}
-  catch(err){console.error(err);downloadBlob(webmBlob,"framebeat-visualizer.webm");setStatus("fallback",100)}
-  finally{exportBtn.disabled=false;stopBtn.disabled=true}
+    const recordedMime=recorder.mimeType||mime;
+    const recordedBlob=new Blob(chunks,{type:recordedMime});
+    if(recordedMime.toLowerCase().includes("mp4")){
+      offerDownload(recordedBlob,"framebeat-visualizer.mp4");setStatus("done",100);
+    }else{
+      setStatus("converting",90);
+      try{const mp4Blob=await transcodeToMp4(recordedBlob);offerDownload(mp4Blob,"framebeat-visualizer.mp4");setStatus("done",100)}
+      catch(err){console.error(err);offerDownload(recordedBlob,"framebeat-visualizer.webm");setStatus("fallback",100)}
+    }
+  }catch(err){
+    console.error(err);audio.pause();
+    if(recorder&&recorder.state!=="inactive")try{recorder.stop()}catch(_){}
+    showExportError(err&&err.message?err.message:t("exportFailed"));
+  }finally{
+    if(dest)try{analyser.disconnect(dest)}catch(_){}
+    if(canvasStream)canvasStream.getTracks().forEach(track=>track.stop());
+    if(outStream)outStream.getTracks().forEach(track=>track.stop());
+    setExportDisabled(false);stopBtn.disabled=true;
+  }
 }
-exportBtn.onclick=exportVideo;stopBtn.onclick=()=>abortExport=true;
+function getRecorderMimeType(){
+  const types=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4;codecs=h264,aac","video/mp4","video/webm;codecs=vp8,opus","video/webm;codecs=vp9,opus","video/webm"];
+  return types.find(type=>MediaRecorder.isTypeSupported(type))||"";
+}
+function waitForRecordingEnd(){return new Promise(resolve=>{
+  const tick=()=>{if(audio.duration)setStatus("rendering",audio.currentTime/audio.duration*88)};
+  const finish=()=>{cleanup();resolve()};
+  const watch=setInterval(()=>{if(abortExport){audio.pause();cleanup();resolve()}},200);
+  const cleanup=()=>{clearInterval(watch);audio.removeEventListener("timeupdate",tick);audio.removeEventListener("ended",finish)};
+  audio.addEventListener("timeupdate",tick);audio.addEventListener("ended",finish);
+})}
+function showExportError(message){statusText.dataset.state="";statusText.textContent=t("exportFailed");hintText.textContent=message;progressBar.style.width="0%"}
+function setExportDisabled(disabled){exportBtn.disabled=disabled;mobileExportBtn.disabled=disabled}
+exportBtn.onclick=mobileExportBtn.onclick=exportVideo;stopBtn.onclick=()=>abortExport=true;
 
 async function transcodeToMp4(blob){
   if(!window.FFmpegWASM||!window.FFmpegUtil)throw Error("FFmpeg unavailable");
@@ -376,9 +411,24 @@ async function transcodeToMp4(blob){
   await ffmpeg.load({coreURL:`${base}/ffmpeg-core.js`,wasmURL:`${base}/ffmpeg-core.wasm`});
   await ffmpeg.writeFile("input.webm",await fetchFile(blob));
   await ffmpeg.exec(["-i","input.webm","-c:v","libx264","-preset","veryfast","-crf","20","-pix_fmt","yuv420p","-c:a","aac","-b:a","192k","-movflags","+faststart","output.mp4"]);
-  const data=await ffmpeg.readFile("output.mp4");downloadBlob(new Blob([data.buffer],{type:"video/mp4"}),"framebeat-visualizer.mp4");
+  const data=await ffmpeg.readFile("output.mp4");return new Blob([data.buffer],{type:"video/mp4"});
 }
-function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+function isMobileDownload(){return matchMedia("(max-width: 720px), (pointer: coarse)").matches}
+function offerDownload(blob,name){
+  if(!isMobileDownload()){downloadBlob(blob,name);return}
+  downloadBtn.hidden=false;
+  hintText.textContent=t("saveReady");
+  downloadBtn.onclick=()=>saveBlobOnMobile(blob,name);
+}
+async function saveBlobOnMobile(blob,name){
+  const file=typeof File!=="undefined"?new File([blob],name,{type:blob.type||"application/octet-stream"}):null;
+  if(file&&navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+    try{await navigator.share({files:[file],title:t("shareTitle")});return}
+    catch(err){if(err.name==="AbortError")return}
+  }
+  downloadBlob(blob,name);
+}
+function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},60000)}
 
 audio.addEventListener("loadedmetadata",()=>timeText.textContent=`00:00 / ${fmt(audio.duration)}`);
 fitCanvas();updateSliderLabels();applyLanguage();setStatus("ready",0);drawFrame();
