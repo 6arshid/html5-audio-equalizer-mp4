@@ -2,15 +2,16 @@ const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 
 const canvas=$("#canvas"),ctx=canvas.getContext("2d"),audio=$("#audio");
-const coverInput=$("#coverInput"),audioInput=$("#audioInput"),titleInput=$("#titleInput"),descInput=$("#descInput");
+const coverInput=$("#coverInput"),backgroundInput=$("#backgroundInput"),audioInput=$("#audioInput"),titleInput=$("#titleInput"),descInput=$("#descInput");
 const descImageInput=$("#descImageInput"),fontSearch=$("#fontSearch"),fontList=$("#fontList"),fontState=$("#fontState");
 const ratioSelect=$("#ratioSelect"),qualitySelect=$("#qualitySelect"),vizSelect=$("#vizSelect"),themeSelect=$("#themeSelect");
 const gainRange=$("#gainRange"),blurRange=$("#blurRange"),darkenRange=$("#darkenRange"),descWidth=$("#descWidth");
 const descX=$("#descX"),descY=$("#descY"),descAlign=$("#descAlign"),descStyle=$("#descStyle");
 const playBtn=$("#playBtn"),exportBtn=$("#exportBtn"),stopBtn=$("#stopBtn"),langBtn=$("#langBtn");
+const resetBackgroundBtn=$("#resetBackgroundBtn"),backgroundName=$("#backgroundName");
 const statusText=$("#statusText"),progressBar=$("#progressBar"),hintText=$("#hintText"),canvasInfo=$("#canvasInfo"),timeText=$("#timeText");
 
-let coverImg=null,descImg=null,audioCtx=null,analyser=null,sourceNode=null,freqData=null,timeData=null,recorder=null,chunks=[];
+let coverImg=null,backgroundImg=null,descImg=null,audioCtx=null,analyser=null,sourceNode=null,freqData=null,timeData=null,recorder=null,chunks=[];
 let abortExport=false,currentLang="en",activeFont="Inter",dragging=false,dragOffset={x:0,y:0},descHit={x:0,y:0,w:0,h:0};
 
 const THEMES={
@@ -24,7 +25,7 @@ const THEMES={
 const I18N={
  en:{
   studio:"Visualizer Studio",preview:"Preview",export:"Export MP4",project:"Project",assets:"Assets & content",
-  cover:"Cover / Thumbnail",chooseCover:"Choose image",audio:"Audio file",chooseAudio:"Choose MP3",title:"Title",
+  cover:"Cover / Thumbnail",chooseCover:"Choose image",background:"Background",chooseBackground:"Choose background",coverDefault:"Cover is used by default",useCover:"Use cover",audio:"Audio file",chooseAudio:"Choose MP3",title:"Title",
   description:"Description",optional:"Optional",descImage:"Description image",chooseDescImage:"Add image",
   imageHint:"Shown inside description block",font:"Google Font",fontHelp:"Search or type any Google Font family.",
   canvas:"Canvas",dragTip:"Drag the description block directly on the canvas",design:"Design",layoutMotion:"Layout & motion",
@@ -37,6 +38,7 @@ const I18N={
   noRecorder:"MediaRecorder is not supported in this browser.",trackTitle:"Track title",noFile:"No file selected"
  },
  fa:{
+  background:"پس‌زمینه",chooseBackground:"انتخاب پس‌زمینه",coverDefault:"به‌صورت پیش‌فرض از کاور استفاده می‌شود",useCover:"استفاده از کاور",
   studio:"استودیو ویژوالایزر",preview:"پیش‌نمایش",export:"خروجی MP4",project:"پروژه",assets:"فایل‌ها و محتوا",
   cover:"کاور / تصویر بندانگشتی",chooseCover:"انتخاب تصویر",audio:"فایل صوتی",chooseAudio:"انتخاب MP3",title:"عنوان",
   description:"توضیحات",optional:"اختیاری",descImage:"تصویر توضیحات",chooseDescImage:"افزودن تصویر",
@@ -63,6 +65,7 @@ function applyLanguage(){
   });
   titleInput.placeholder=t("trackTitle");
   if(!audioInput.files[0]) $("#audioName").textContent=t("noFile");
+  backgroundName.textContent=backgroundImg&&backgroundInput.files[0]?backgroundInput.files[0].name:t("coverDefault");
   if(statusText.dataset.state) statusText.textContent=t(statusText.dataset.state);
 }
 langBtn.onclick=()=>{currentLang=currentLang==="en"?"fa":"en";applyLanguage()};
@@ -107,10 +110,18 @@ function imageCover(img,x,y,w,h){
   ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
 }
 
+function getCoverLayout(){
+  const w=canvas.width,h=canvas.height,min=Math.min(w,h),portrait=ratioSelect.value==="9:16";
+  const size=min*(portrait?.46:.31);
+  const x=w/2-size/2,y=h*(portrait?.135:.13);
+  return{x,y,size,cx:x+size/2,cy:y+size/2};
+}
+
 function drawBackground(){
   const w=canvas.width,h=canvas.height;
-  if(coverImg){
-    ctx.save();ctx.filter=`blur(${Number(blurRange.value)}px) saturate(.92)`;imageCover(coverImg,-w*.025,-h*.025,w*1.05,h*1.05);ctx.restore();
+  const backdrop=backgroundImg||coverImg;
+  if(backdrop){
+    ctx.save();ctx.filter=`blur(${Number(blurRange.value)}px) saturate(.92)`;imageCover(backdrop,-w*.025,-h*.025,w*1.05,h*1.05);ctx.restore();
   }else{
     ctx.fillStyle="#12141a";ctx.fillRect(0,0,w,h);
     const g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,"rgba(119,101,255,.22)");g.addColorStop(1,"rgba(255,255,255,0)");
@@ -120,11 +131,12 @@ function drawBackground(){
   const vign=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.15,w/2,h/2,Math.max(w,h)*.7);
   vign.addColorStop(0,"rgba(0,0,0,0)");vign.addColorStop(1,"rgba(0,0,0,.38)");ctx.fillStyle=vign;ctx.fillRect(0,0,w,h);
 
-  if(coverImg){
-    const s=Math.min(w,h)*(ratioSelect.value==="9:16"?.33:.31);
-    const x=w/2-s/2,y=h*(ratioSelect.value==="9:16"?.16:.13);
-    ctx.save();ctx.shadowColor="rgba(0,0,0,.48)";ctx.shadowBlur=s*.09;roundRect(ctx,x,y,s,s,s*.035);ctx.clip();imageCover(coverImg,x,y,s,s);ctx.restore();
-  }
+}
+
+function drawCover(){
+  if(!coverImg)return;
+  const {x,y,size}=getCoverLayout();
+  ctx.save();ctx.shadowColor="rgba(0,0,0,.48)";ctx.shadowBlur=size*.09;roundRect(ctx,x,y,size,size,size*.035);ctx.clip();imageCover(coverImg,x,y,size,size);ctx.restore();
 }
 
 function gradient(x1,y1,x2,y2){
@@ -154,8 +166,8 @@ function drawBars(mirror){
 }
 
 function drawCircle(){
-  const w=canvas.width,h=canvas.height,cx=w/2,cy=h*(ratioSelect.value==="9:16"?.325:.30),r=Math.min(w,h)*.205,gain=+gainRange.value;
-  ctx.strokeStyle=gradient(cx-r,cy,cx+r,cy);ctx.lineWidth=Math.max(2,Math.min(w,h)*.0026);ctx.lineCap="round";
+  const {cx,cy,size}=getCoverLayout(),r=size*.74,gain=+gainRange.value,min=Math.min(canvas.width,canvas.height);
+  ctx.strokeStyle=gradient(cx-r,cy,cx+r,cy);ctx.lineWidth=Math.max(2,min*.0026);ctx.lineCap="round";
   for(let i=0;i<144;i++){
     const a=i/144*Math.PI*2-Math.PI/2,idx=Math.floor(i/144*freqData.length*.58),v=freqData[idx]/255*gain,len=r*(.07+Math.min(.48,v*.40));
     ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.lineTo(cx+Math.cos(a)*(r+len),cy+Math.sin(a)*(r+len));ctx.stroke();
@@ -226,7 +238,7 @@ function drawDescription(){
 }
 
 function drawFrame(){
-  drawBackground();drawVisualizer();drawContent();
+  drawBackground();drawCover();drawVisualizer();drawContent();
   timeText.textContent=`${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
   requestAnimationFrame(drawFrame);
 }
@@ -235,6 +247,13 @@ function loadImageFile(file,cb){
   if(!file)return;const img=new Image();img.onload=()=>cb(img);img.src=URL.createObjectURL(file);
 }
 coverInput.onchange=e=>loadImageFile(e.target.files[0],img=>coverImg=img);
+backgroundInput.onchange=e=>{
+  const file=e.target.files[0];
+  loadImageFile(file,img=>{backgroundImg=img;backgroundName.textContent=file.name});
+};
+resetBackgroundBtn.onclick=()=>{
+  backgroundImg=null;backgroundInput.value="";backgroundName.textContent=t("coverDefault");
+};
 descImageInput.onchange=e=>loadImageFile(e.target.files[0],img=>descImg=img);
 
 audioInput.onchange=async e=>{

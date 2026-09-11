@@ -41,6 +41,18 @@
         </div>
 
         <div class="field">
+          <div class="label-row">
+            <label data-i18n="background">Background</label>
+            <button id="resetBackgroundBtn" class="inline-action" type="button" data-i18n="useCover">Use cover</button>
+          </div>
+          <label class="dropzone compact">
+            <input id="backgroundInput" type="file" accept="image/*">
+            <span data-i18n="chooseBackground">Choose background</span>
+            <small id="backgroundName" data-i18n="coverDefault">Cover is used by default</small>
+          </label>
+        </div>
+
+        <div class="field">
           <label data-i18n="audio">Audio file</label>
           <label class="dropzone">
             <input id="audioInput" type="file" accept="audio/*,.mp3">
