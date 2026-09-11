@@ -4,7 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>FrameBeat Studio</title>
+  <meta name="theme-color" content="#0b0b10">
+  <meta name="application-name" content="Mp3 to Mp4 equalizer">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mp3 to Mp4 equalizer">
+  <title>Mp3 to Mp4 equalizer</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,7 +21,7 @@
       <div class="wordmark">
         <span class="mark"></span>
         <div>
-          <strong>FrameBeat</strong>
+          <strong>Mp3 to Mp4 equalizer</strong>
           <small data-i18n="studio">Visualizer Studio</small>
         </div>
       </div>
@@ -226,6 +234,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
   <script src="app.js?v=3"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js');
+      });
+    }
+  </script>
       <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-L6ERZLL0RW"></script>
     <script>
