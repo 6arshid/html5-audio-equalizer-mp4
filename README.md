@@ -10,7 +10,8 @@ Try the live **MP3 to MP4 Equalizer** at [apps.6arshid.com/mp3tomp4/](https://ap
 
 - English is the default UI language
 - Persian / فارسی switch
-- Cover / thumbnail upload
+- Image, animated GIF or video uploads for the cover, background and description media
+- Optional looping for uploaded videos
 - MP3 upload
 - Title
 - Optional description

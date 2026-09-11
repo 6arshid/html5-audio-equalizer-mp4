@@ -35,6 +35,7 @@ body{overflow:hidden}
 .optional{font-size:9px;color:#777b84}
 .inline-action{border:0;background:transparent;color:var(--accent);font-size:9px;padding:0;cursor:pointer}
 .inline-action:hover{text-decoration:underline}
+.inline-action:not(.active){color:var(--muted)}
 .text-input,select{width:100%;border:1px solid var(--line2);background:#0f1013;color:var(--text);border-radius:9px;outline:none;padding:9px 10px;font-size:12px}
 .text-input:focus,select:focus{border-color:#555866}
 textarea.text-input{resize:vertical;min-height:78px;line-height:1.55}

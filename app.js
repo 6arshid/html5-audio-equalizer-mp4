@@ -8,11 +8,11 @@ const ratioSelect=$("#ratioSelect"),qualitySelect=$("#qualitySelect"),vizSelect=
 const gainRange=$("#gainRange"),blurRange=$("#blurRange"),darkenRange=$("#darkenRange"),descWidth=$("#descWidth");
 const descX=$("#descX"),descY=$("#descY"),descAlign=$("#descAlign"),descStyle=$("#descStyle");
 const playBtn=$("#playBtn"),exportBtn=$("#exportBtn"),mobileExportBtn=$("#mobileExportBtn"),downloadBtn=$("#downloadBtn"),stopBtn=$("#stopBtn"),langBtn=$("#langBtn");
-const resetBackgroundBtn=$("#resetBackgroundBtn"),backgroundName=$("#backgroundName");
+const resetBackgroundBtn=$("#resetBackgroundBtn"),backgroundName=$("#backgroundName"),loopVideoBtn=$("#loopVideoBtn");
 const statusText=$("#statusText"),progressBar=$("#progressBar"),hintText=$("#hintText"),canvasInfo=$("#canvasInfo"),timeText=$("#timeText");
 
-let coverImg=null,backgroundImg=null,descImg=null,audioCtx=null,analyser=null,sourceNode=null,freqData=null,timeData=null,recorder=null,chunks=[];
-let abortExport=false,currentLang="en",activeFont="Inter",dragging=false,dragOffset={x:0,y:0},descHit={x:0,y:0,w:0,h:0};
+let coverMedia=null,backgroundMedia=null,descMedia=null,audioCtx=null,analyser=null,sourceNode=null,freqData=null,timeData=null,recorder=null,chunks=[];
+let abortExport=false,currentLang="en",activeFont="Inter",loopVideos=true,dragging=false,dragOffset={x:0,y:0},descHit={x:0,y:0,w:0,h:0};
 
 const THEMES={
   violet:["#7765ff","#8f82ff","#c5c0ff"],
@@ -25,9 +25,9 @@ const THEMES={
 const I18N={
  en:{
   studio:"Visualizer Studio",preview:"Preview",export:"Export MP4",project:"Project",assets:"Assets & content",
-  cover:"Cover / Thumbnail",chooseCover:"Choose image",background:"Background",chooseBackground:"Choose background",coverDefault:"Cover is used by default",useCover:"Use cover",audio:"Audio file",chooseAudio:"Choose MP3",title:"Title",
-  description:"Description",optional:"Optional",descImage:"Description image",chooseDescImage:"Add image",
-  imageHint:"Shown inside description block",font:"Google Font",fontHelp:"Search or type any Google Font family.",
+  cover:"Cover / Thumbnail",chooseCover:"Choose image or video",loopOn:"Loop video: On",loopOff:"Loop video: Off",background:"Background",chooseBackground:"Choose image or video",coverDefault:"Cover is used by default",useCover:"Use cover",audio:"Audio file",chooseAudio:"Choose MP3",title:"Title",
+  description:"Description",optional:"Optional",descImage:"Description media",chooseDescImage:"Add image or video",
+  imageHint:"Image, GIF or video shown inside description block",font:"Google Font",fontHelp:"Search or type any Google Font family.",
   canvas:"Canvas",dragTip:"Drag the description block directly on the canvas",design:"Design",layoutMotion:"Layout & motion",
   ratio:"Aspect ratio",quality:"Quality",visualizer:"Visualizer",accent:"Accent",descriptionLayout:"Description layout",
   alignLeft:"Left",alignCenter:"Center",alignRight:"Right",plain:"Plain",card:"Card",glass:"Glass",
@@ -40,11 +40,11 @@ const I18N={
   starting:"Starting export…",exportFailed:"Export failed",noCanvasCapture:"Video export is not supported by this mobile browser.",unsupportedFormat:"This browser cannot record a supported video format."
  },
  fa:{
-  background:"پس‌زمینه",chooseBackground:"انتخاب پس‌زمینه",coverDefault:"به‌صورت پیش‌فرض از کاور استفاده می‌شود",useCover:"استفاده از کاور",
+  background:"پس‌زمینه",chooseBackground:"انتخاب تصویر یا ویدئو",coverDefault:"به‌صورت پیش‌فرض از کاور استفاده می‌شود",useCover:"استفاده از کاور",loopOn:"تکرار ویدئو: روشن",loopOff:"تکرار ویدئو: خاموش",
   studio:"استودیو ویژوالایزر",preview:"پیش‌نمایش",export:"خروجی MP4",project:"پروژه",assets:"فایل‌ها و محتوا",
-  cover:"کاور / تصویر بندانگشتی",chooseCover:"انتخاب تصویر",audio:"فایل صوتی",chooseAudio:"انتخاب MP3",title:"عنوان",
-  description:"توضیحات",optional:"اختیاری",descImage:"تصویر توضیحات",chooseDescImage:"افزودن تصویر",
-  imageHint:"داخل بلوک توضیحات نمایش داده می‌شود",font:"فونت Google",fontHelp:"جست‌وجو کنید یا نام هر Google Font را بنویسید.",
+  cover:"کاور / تصویر بندانگشتی",chooseCover:"انتخاب تصویر یا ویدئو",audio:"فایل صوتی",chooseAudio:"انتخاب MP3",title:"عنوان",
+  description:"توضیحات",optional:"اختیاری",descImage:"رسانه توضیحات",chooseDescImage:"افزودن تصویر یا ویدئو",
+  imageHint:"تصویر، گیف یا ویدئو داخل بلوک توضیحات نمایش داده می‌شود",font:"فونت Google",fontHelp:"جست‌وجو کنید یا نام هر Google Font را بنویسید.",
   canvas:"بوم",dragTip:"بلوک توضیحات را مستقیم روی تصویر بکشید و جابه‌جا کنید",design:"طراحی",layoutMotion:"چیدمان و حرکت",
   ratio:"نسبت تصویر",quality:"کیفیت",visualizer:"اکولایزر",accent:"رنگ اصلی",descriptionLayout:"چیدمان توضیحات",
   alignLeft:"چپ",alignCenter:"وسط",alignRight:"راست",plain:"ساده",card:"کارت",glass:"شیشه‌ای",
@@ -69,7 +69,8 @@ function applyLanguage(){
   });
   titleInput.placeholder=t("trackTitle");
   if(!audioInput.files[0]) $("#audioName").textContent=t("noFile");
-  backgroundName.textContent=backgroundImg&&backgroundInput.files[0]?backgroundInput.files[0].name:t("coverDefault");
+  backgroundName.textContent=backgroundMedia&&backgroundInput.files[0]?backgroundInput.files[0].name:t("coverDefault");
+  updateLoopButton();
   if(statusText.dataset.state) statusText.textContent=t(statusText.dataset.state);
 }
 langBtn.onclick=()=>{currentLang=currentLang==="en"?"fa":"en";applyLanguage()};
@@ -108,10 +109,12 @@ async function ensureAudioGraph(){
   freqData=new Uint8Array(analyser.frequencyBinCount);timeData=new Uint8Array(analyser.fftSize);
 }
 
-function imageCover(img,x,y,w,h){
-  const ir=img.width/img.height,cr=w/h;let sx=0,sy=0,sw=img.width,sh=img.height;
-  if(ir>cr){sw=img.height*cr;sx=(img.width-sw)/2}else{sh=img.width/cr;sy=(img.height-sh)/2}
-  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+function mediaCover(media,x,y,w,h){
+  const mw=media.videoWidth||media.naturalWidth||media.width,mh=media.videoHeight||media.naturalHeight||media.height;
+  if(!mw||!mh)return;
+  const ir=mw/mh,cr=w/h;let sx=0,sy=0,sw=mw,sh=mh;
+  if(ir>cr){sw=mh*cr;sx=(mw-sw)/2}else{sh=mw/cr;sy=(mh-sh)/2}
+  ctx.drawImage(media,sx,sy,sw,sh,x,y,w,h);
 }
 
 function getCoverLayout(){
@@ -127,9 +130,9 @@ function getVisualizerMode(){
 
 function drawBackground(){
   const w=canvas.width,h=canvas.height;
-  const backdrop=backgroundImg||coverImg;
+  const backdrop=backgroundMedia||coverMedia;
   if(backdrop){
-    ctx.save();ctx.filter=`blur(${Number(blurRange.value)}px) saturate(.92)`;imageCover(backdrop,-w*.025,-h*.025,w*1.05,h*1.05);ctx.restore();
+    ctx.save();ctx.filter=`blur(${Number(blurRange.value)}px) saturate(.92)`;mediaCover(backdrop,-w*.025,-h*.025,w*1.05,h*1.05);ctx.restore();
   }else{
     ctx.fillStyle="#12141a";ctx.fillRect(0,0,w,h);
     const g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,"rgba(119,101,255,.22)");g.addColorStop(1,"rgba(255,255,255,0)");
@@ -142,15 +145,15 @@ function drawBackground(){
 }
 
 function drawCover(){
-  if(!coverImg)return;
+  if(!coverMedia)return;
   const {x,y,size,cx,cy}=getCoverLayout();
   ctx.save();ctx.shadowColor="rgba(0,0,0,.48)";ctx.shadowBlur=size*.09;
   if(getVisualizerMode()==="circle"){
     const r=size*.74;
     ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.closePath();ctx.clip();
-    imageCover(coverImg,cx-r,cy-r,r*2,r*2);
+    mediaCover(coverMedia,cx-r,cy-r,r*2,r*2);
   }else{
-    roundRect(ctx,x,y,size,size,size*.035);ctx.clip();imageCover(coverImg,x,y,size,size);
+    roundRect(ctx,x,y,size,size,size*.035);ctx.clip();mediaCover(coverMedia,x,y,size,size);
   }
   ctx.restore();
 }
@@ -220,10 +223,10 @@ function drawContent(){
 }
 
 function drawDescription(){
-  const text=descInput.value.trim();if(!text&&!descImg){descHit={x:0,y:0,w:0,h:0};return}
+  const text=descInput.value.trim();if(!text&&!descMedia){descHit={x:0,y:0,w:0,h:0};return}
   const w=canvas.width,h=canvas.height,min=Math.min(w,h),blockW=w*(+descWidth.value/100);
-  const pad=min*.022,imgSize=descImg?min*.105:0,gap=descImg?min*.018:0;
-  const fontSize=Math.round(min*.021),lineH=fontSize*1.42,maxTextW=blockW-pad*2-(descImg?imgSize+gap:0);
+  const pad=min*.022,imgSize=descMedia?min*.105:0,gap=descMedia?min*.018:0;
+  const fontSize=Math.round(min*.021),lineH=fontSize*1.42,maxTextW=blockW-pad*2-(descMedia?imgSize+gap:0);
   const lines=text?wrapLines(text,maxTextW,`500 ${fontSize}px ${getFont()}`,5):[];
   const textH=Math.max(imgSize,lines.length*lineH);
   const blockH=Math.max(min*.07,textH+pad*2);
@@ -236,12 +239,12 @@ function drawDescription(){
     else{ctx.fillStyle="rgba(16,17,20,.86)";ctx.strokeStyle="rgba(255,255,255,.08)"}
     roundRect(ctx,x,y,blockW,blockH,min*.018);ctx.fill();ctx.lineWidth=Math.max(1,min*.0012);ctx.stroke();
   }
-  if(descImg){
-    const ix=x+pad,iy=y+(blockH-imgSize)/2;roundRect(ctx,ix,iy,imgSize,imgSize,min*.012);ctx.clip();imageCover(descImg,ix,iy,imgSize,imgSize);
+  if(descMedia){
+    const ix=x+pad,iy=y+(blockH-imgSize)/2;roundRect(ctx,ix,iy,imgSize,imgSize,min*.012);ctx.clip();mediaCover(descMedia,ix,iy,imgSize,imgSize);
     ctx.restore();ctx.save();
   }
 
-  const textXBase=x+pad+(descImg?imgSize+gap:0),available=blockW-pad*2-(descImg?imgSize+gap:0);
+  const textXBase=x+pad+(descMedia?imgSize+gap:0),available=blockW-pad*2-(descMedia?imgSize+gap:0);
   let align=descAlign.value;
   if(currentLang==="fa"&&align==="left") align="right";
   if(currentLang==="fa"&&descAlign.value==="right") align="left";
@@ -259,18 +262,55 @@ function drawFrame(){
   requestAnimationFrame(drawFrame);
 }
 
-function loadImageFile(file,cb){
-  if(!file)return;const img=new Image();img.onload=()=>cb(img);img.src=URL.createObjectURL(file);
+function releaseVisualMedia(media){
+  if(!media)return;
+  const url=media.dataset.objectUrl;
+  if(media.tagName==="VIDEO"){media.pause();media.removeAttribute("src");media.load()}
+  if(url)URL.revokeObjectURL(url);
 }
-coverInput.onchange=e=>loadImageFile(e.target.files[0],img=>coverImg=img);
+function loadVisualFile(file,current,cb){
+  if(!file)return;
+  const url=URL.createObjectURL(file),isVideo=file.type.startsWith("video/")||/\.(mp4|webm|ogv|mov|m4v)$/i.test(file.name);
+  const media=isVideo?document.createElement("video"):new Image();
+  media.dataset.objectUrl=url;
+  const ready=()=>{releaseVisualMedia(current);cb(media);updateLoopButton();if(isVideo)media.play().catch(()=>{})};
+  const failed=()=>{URL.revokeObjectURL(url);alert(`Unable to load ${file.name}`)};
+  if(isVideo){media.muted=true;media.loop=loopVideos;media.playsInline=true;media.preload="auto";media.onloadeddata=ready;media.onerror=failed}
+  else{media.onload=ready;media.onerror=failed}
+  media.src=url;
+}
+function visualVideos(){return [...new Set([coverMedia,backgroundMedia,descMedia].filter(media=>media&&media.tagName==="VIDEO"))]}
+function updateLoopButton(){
+  if(!loopVideoBtn)return;
+  loopVideoBtn.hidden=visualVideos().length===0;
+  loopVideoBtn.textContent=t(loopVideos?"loopOn":"loopOff");
+  loopVideoBtn.classList.toggle("active",loopVideos);
+  loopVideoBtn.setAttribute("aria-pressed",String(loopVideos));
+  visualVideos().forEach(video=>video.loop=loopVideos);
+}
+function syncVisualVideos(force=false){
+  visualVideos().forEach(video=>{
+    if(!Number.isFinite(video.duration)||!video.duration)return;
+    const target=loopVideos?audio.currentTime%video.duration:Math.min(audio.currentTime,Math.max(0,video.duration-.05));
+    if(force||Math.abs(video.currentTime-target)>.3)try{video.currentTime=target}catch(_){}
+  });
+}
+async function playVisualVideos(){
+  syncVisualVideos(true);
+  await Promise.all(visualVideos().map(video=>video.play().catch(()=>{})));
+}
+function pauseVisualVideos(){visualVideos().forEach(video=>video.pause())}
+loopVideoBtn.onclick=()=>{loopVideos=!loopVideos;updateLoopButton();syncVisualVideos(true);if(!audio.paused)playVisualVideos()};
+
+coverInput.onchange=e=>loadVisualFile(e.target.files[0],coverMedia,media=>coverMedia=media);
 backgroundInput.onchange=e=>{
   const file=e.target.files[0];
-  loadImageFile(file,img=>{backgroundImg=img;backgroundName.textContent=file.name});
+  loadVisualFile(file,backgroundMedia,media=>{backgroundMedia=media;backgroundName.textContent=file.name});
 };
 resetBackgroundBtn.onclick=()=>{
-  backgroundImg=null;backgroundInput.value="";backgroundName.textContent=t("coverDefault");
+  releaseVisualMedia(backgroundMedia);backgroundMedia=null;backgroundInput.value="";backgroundName.textContent=t("coverDefault");updateLoopButton();
 };
-descImageInput.onchange=e=>loadImageFile(e.target.files[0],img=>descImg=img);
+descImageInput.onchange=e=>loadVisualFile(e.target.files[0],descMedia,media=>descMedia=media);
 
 audioInput.onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
@@ -349,7 +389,7 @@ canvas.addEventListener("pointercancel",()=>{dragging=false;canvas.style.cursor=
 playBtn.onclick=async()=>{
   if(!audio.src){alert(t("needAudio"));return}
   await ensureAudioGraph();if(audioCtx.state==="suspended")await audioCtx.resume();
-  if(audio.paused)await audio.play();else audio.pause();
+  if(audio.paused){await playVisualVideos();await audio.play()}else audio.pause();
 };
 
 async function exportVideo(){
@@ -369,7 +409,7 @@ async function exportVideo(){
     recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
     const recorderFailure=new Promise((_,reject)=>recorder.addEventListener("error",e=>reject(e.error||Error("MediaRecorder error")),{once:true}));
     recorder.start(1000);
-    audio.currentTime=0;await audio.play();setStatus("rendering",0);
+    audio.currentTime=0;await playVisualVideos();await audio.play();setStatus("rendering",0);
 
     await Promise.race([waitForRecordingEnd(),recorderFailure]);
     if(recorder.state!=="inactive")await new Promise((resolve,reject)=>{
@@ -443,4 +483,8 @@ async function saveBlobOnMobile(blob,name){
 function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},60000)}
 
 audio.addEventListener("loadedmetadata",()=>timeText.textContent=`00:00 / ${fmt(audio.duration)}`);
+audio.addEventListener("play",playVisualVideos);
+audio.addEventListener("pause",pauseVisualVideos);
+audio.addEventListener("seeked",()=>{syncVisualVideos(true);if(!audio.paused)playVisualVideos()});
+audio.addEventListener("timeupdate",()=>syncVisualVideos());
 fitCanvas();updateSliderLabels();applyLanguage();setStatus("ready",0);drawFrame();

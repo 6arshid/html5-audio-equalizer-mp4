@@ -85,11 +85,14 @@
         </div>
 
         <div class="field">
-          <label data-i18n="cover">Cover / Thumbnail</label>
+          <div class="label-row">
+            <label data-i18n="cover">Cover / Thumbnail</label>
+            <button id="loopVideoBtn" class="inline-action active" type="button" data-i18n="loopVideo" hidden>Loop video: On</button>
+          </div>
           <label class="dropzone">
-            <input id="coverInput" type="file" accept="image/*">
+            <input id="coverInput" type="file" accept="image/*,video/*,.gif">
             <span data-i18n="chooseCover">Choose image</span>
-            <small>JPG, PNG, WEBP</small>
+            <small>JPG, PNG, WEBP, GIF, MP4, WEBM</small>
           </label>
         </div>
 
@@ -99,7 +102,7 @@
             <button id="resetBackgroundBtn" class="inline-action" type="button" data-i18n="useCover">Use cover</button>
           </div>
           <label class="dropzone compact">
-            <input id="backgroundInput" type="file" accept="image/*">
+            <input id="backgroundInput" type="file" accept="image/*,video/*,.gif">
             <span data-i18n="chooseBackground">Choose background</span>
             <small id="backgroundName" data-i18n="coverDefault">Cover is used by default</small>
           </label>
@@ -130,7 +133,7 @@
         <div class="field">
           <label data-i18n="descImage">Description image</label>
           <label class="dropzone compact">
-            <input id="descImageInput" type="file" accept="image/*">
+            <input id="descImageInput" type="file" accept="image/*,video/*,.gif">
             <span data-i18n="chooseDescImage">Add image</span>
             <small data-i18n="imageHint">Shown inside description block</small>
           </label>
@@ -278,7 +281,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=5"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
