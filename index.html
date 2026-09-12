@@ -5,60 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0b0b10">
-  <title>MP3 to MP4 Equalizer — Free Online Audio Visualizer</title>
-  <meta name="description" content="Create MP4 videos from MP3 audio with a customizable equalizer and audio visualizer. Add cover art, text, backgrounds and export online in your browser.">
-  <meta name="keywords" content="MP3 to MP4 Equalizer, MP3 to MP4, audio equalizer video, audio visualizer, music visualizer, MP4 maker">
-  <meta name="author" content="6arshid">
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-  <link rel="canonical" href="https://apps.6arshid.com/mp3tomp4/">
-
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="MP3 to MP4 Equalizer">
-  <meta property="og:title" content="MP3 to MP4 Equalizer — Free Online Audio Visualizer">
-  <meta property="og:description" content="Turn MP3 audio into an MP4 equalizer video online. Customize the visualizer, cover art, text and background, then export in your browser.">
-  <meta property="og:url" content="https://apps.6arshid.com/mp3tomp4/">
-  <meta property="og:image" content="https://apps.6arshid.com/mp3tomp4/icon.png">
-  <meta property="og:image:alt" content="MP3 to MP4 Equalizer app icon">
-  <meta property="og:locale" content="en_US">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MP3 to MP4 Equalizer — Free Online Audio Visualizer">
-  <meta name="twitter:description" content="Create a customizable MP4 equalizer video from an MP3 file directly in your browser.">
-  <meta name="twitter:image" content="https://apps.6arshid.com/mp3tomp4/icon.png">
-  <meta name="twitter:image:alt" content="MP3 to MP4 Equalizer app icon">
-
+  <title>MP3 to MP4 Equalizer</title>
   <meta name="application-name" content="MP3 to MP4 Equalizer">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MP3 to MP4 Equalizer">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icon.png" type="image/png">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" href="icon.png?v=17" type="image/png">
+  <link rel="shortcut icon" href="icon.png?v=17" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png?v=17">
+  <link rel="manifest" href="manifest.webmanifest?v=17">
   <link rel="stylesheet" href="style.css">
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "MP3 to MP4 Equalizer",
-    "url": "https://apps.6arshid.com/mp3tomp4/",
-    "description": "A free online MP3 to MP4 converter that creates customizable audio equalizer and music visualizer videos in the browser.",
-    "applicationCategory": "MultimediaApplication",
-    "operatingSystem": "Any",
-    "browserRequirements": "Requires a modern web browser with JavaScript enabled",
-    "image": "https://apps.6arshid.com/mp3tomp4/icon.png",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "featureList": [
-      "Convert MP3 audio to MP4 video",
-      "Customizable audio equalizer and music visualizer",
-      "Cover art, background and text controls",
-      "Browser-based video rendering"
-    ]
-  }
-  </script>
 </head>
 <body>
   <div class="studio">
@@ -198,12 +154,28 @@
             <button data-viz="mirror">Mirror</button>
             <button data-viz="circle">Circle</button>
             <button data-viz="wave">Wave</button>
+            <button data-viz="ink">Ink</button>
+            <button data-viz="signal">Signal</button>
+            <button data-viz="anemone">Anemone</button>
+            <button data-viz="idol">Idol</button>
+            <button data-viz="wisp">Wisp</button>
+            <button data-viz="spacetime">Spacetime</button>
+            <button data-viz="fluid">Fluid</button>
+            <button data-viz="sand">Sand</button>
           </div>
           <select id="vizSelect" hidden>
             <option value="bars" selected>bars</option>
             <option value="mirror">mirror</option>
             <option value="circle">circle</option>
             <option value="wave">wave</option>
+            <option value="ink">ink</option>
+            <option value="signal">signal</option>
+            <option value="anemone">anemone</option>
+            <option value="idol">idol</option>
+            <option value="wisp">wisp</option>
+            <option value="spacetime">spacetime</option>
+            <option value="fluid">fluid</option>
+            <option value="sand">sand</option>
           </select>
         </div>
 
@@ -215,6 +187,7 @@
             <button class="swatch" data-theme="amber" style="--c:#f4b860"></button>
             <button class="swatch" data-theme="rose" style="--c:#ff6f91"></button>
             <button class="swatch" data-theme="white" style="--c:#f2f2f2"></button>
+            <input id="accentColor" class="color-picker" type="color" value="#7765ff" title="Choose a custom accent color" aria-label="Choose a custom accent color">
           </div>
           <select id="themeSelect" hidden>
             <option value="violet" selected>violet</option>
@@ -222,6 +195,7 @@
             <option value="amber">amber</option>
             <option value="rose">rose</option>
             <option value="white">white</option>
+            <option value="custom">custom</option>
           </select>
         </div>
 
@@ -275,27 +249,39 @@
         </div>
 
         <button id="mobileExportBtn" class="export mobile-export" type="button" data-i18n="export">Export MP4</button>
+
+        <footer class="app-footer">
+          <span data-i18n="madeBy">Made By</span> <a href="https://6arshid.com/" target="_blank">6arshid</a> and <a href="https://whitestudio.team/" target="_blank">Whitestudio.team</a>
+          <div class="footer-links">
+            <a href="mailto:info@6arshid.com" data-i18n="feedback">Feedback & suggestions</a>
+            <span class="footer-sep">|</span>
+            <a href="https://6arshid.com/donate/" target="_blank" data-i18n="donate">Donate</a>
+          </div>
+        </footer>
       </aside>
     </main>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
-  <script src="app.js?v=5"></script>
+  <div id="dropOverlay" class="drop-overlay" hidden>
+    <div class="drop-overlay-inner">
+      <div class="drop-zone-target" data-target="cover">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span data-i18n="dropCover">Drop for Cover</span>
+      </div>
+      <div class="drop-zone-target" data-target="desc">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6"/></svg>
+        <span data-i18n="dropDesc">Drop for Description</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="ffmpeg/ffmpeg.js"></script>
+  <script src="ffmpeg/ffmpeg-util.js"></script>
+  <script src="app.js?v=17"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js');
-      });
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
     }
   </script>
-      <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L6ERZLL0RW"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-L6ERZLL0RW');
-    </script>
 </body>
 </html>

@@ -1,9 +1,9 @@
-const CACHE_NAME = 'mp3-to-mp4-equalizer-v3';
+const CACHE_NAME = 'mp3-to-mp4-equalizer-v18';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
-  './app.js?v=5',
+  './app.js?v=17',
   './manifest.webmanifest',
   './icon.png',
   './icons/icon-192.png',
